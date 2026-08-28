@@ -10,11 +10,9 @@ app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 // --- CONFIGURATION ---
 const TARGET_URL = 'https://workers.dev'; 
 
-// Pulls the hidden webhook safely from Render's dashboard environment variables
+// Hidden variables pulled safely from Render
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK; 
-
-// Replace these numbers with your copied Discord Role ID!
-const ROLE_ID_TO_PING = '123456789012345678'; 
+const ROLE_ID_TO_PING = process.env.DISCORD_ROLE_ID; 
 
 const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 let memoryHistory = [];
@@ -22,9 +20,8 @@ let memoryHistory = [];
 async function checkRobloxLeaks() {
     console.log("Checking for new Roblox UGC Drops...");
     
-    // Safety check in case you forgot to add the secret to Render
     if (!DISCORD_WEBHOOK_URL) {
-        console.error("❌ ERROR: DISCORD_WEBHOOK environment variable is missing on Render!");
+        console.error("❌ ERROR: DISCORD_WEBHOOK variable is missing on Render!");
         return;
     }
 
@@ -47,9 +44,12 @@ async function checkRobloxLeaks() {
             if (!memoryHistory.includes(itemId)) {
                 console.log(`New UGC Found: ${item.name || itemId}`);
 
+                // Build the alert text. If no Role ID is set, it just sends the text without a ping.
+                const pingText = ROLE_ID_TO_PING ? `<@&${ROLE_ID_TO_PING}>` : '';
+
                 await axios.post(DISCORD_WEBHOOK_URL, {
                     username: "UGC Leaks Tracker",
-                    content: `🔔 **New UGC Leak Detected!** <@&${ROLE_ID_TO_PING}>`,
+                    content: `🔔 **New UGC Leak Detected!** ${pingText}`,
                     embeds: [{
                         title: item.name || "Unknown UGC Item",
                         color: 65280, 
